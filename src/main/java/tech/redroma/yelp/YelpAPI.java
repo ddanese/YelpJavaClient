@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.redroma.yelp.exceptions.YelpBadArgumentException;
 import tech.redroma.yelp.exceptions.YelpException;
-import tech.redroma.yelp.oauth.OAuthTokenProvider;
 import tech.sirwellington.alchemy.annotations.arguments.NonEmpty;
 import tech.sirwellington.alchemy.annotations.arguments.Required;
 import tech.sirwellington.alchemy.annotations.designs.patterns.BuilderPattern;
@@ -40,7 +39,7 @@ import static tech.sirwellington.alchemy.arguments.assertions.StringAssertions.s
 /**
  * The interface used to interact with <a href= "https://www.yelp.com/developers/documentation/v3">Yelp's Developer API</a>.
  * <p>
- * To create an instance, see {@link #newInstance(java.lang.String, java.lang.String) } or {@link YelpAPI.Builder}.
+ * To create an instance, see {@link #newInstance(java.lang.String) } or {@link YelpAPI.Builder}.
  *
  * @author SirWellington
  * @see <a href= "https://www.yelp.com/developers/documentation/v3">Yelp API</a>
@@ -51,6 +50,8 @@ public interface YelpAPI
     /** The Default Yelp API endpoint */
     
     public static final String DEFAULT_BASE_URL = "https://api.yelp.com/v3";
+
+    public String API_KEY = "";
 
     /**
      * Returns detailed information of a business. This includes things like business hours, additional photos, and price
@@ -144,13 +145,13 @@ public interface YelpAPI
      */
     List<YelpReview> getReviewsForBusiness(@NonEmpty String businessId) throws YelpException;
     
-    static YelpAPI newInstance(@NonEmpty String cliendId, @NonEmpty String clientSecret)
+    static YelpAPI newInstance(@NonEmpty String apiKey)
     {
-        checkThat(cliendId, clientSecret)
+        checkThat(apiKey)
             .are(nonEmptyString());
         
         return Builder.newInstance()
-            .withClientCredentials(cliendId, clientSecret)
+            .withClientCredentials(apiKey)
             .build();
     }
     
@@ -168,25 +169,21 @@ public interface YelpAPI
     {
         
         private static final Logger LOG = LoggerFactory.getLogger(Builder.class);
-       
-        //Used to connect to authenticate calls with Yelp
-        private OAuthTokenProvider oauthProvider;
-        
+
         private String baseURL = DEFAULT_BASE_URL;
         
         //The HTTP Client to use; starts with a default client
         private AlchemyHttp http = AlchemyHttp.newBuilder()
             .usingTimeout(60, TimeUnit.SECONDS)
             .build();
-           
-        //Determins whether an OAuth token is fetched immediately after the client is built
-        private boolean requestTokenImmediately = false;
+
+        private String apiKey = "";
 
         /**
          * Creates a new instance of a Builder.
          * <p>
          * The only thing worth customizing is the
-         * {@linkplain #withClientCredentials(java.lang.String, java.lang.String) OAuth Authentication}
+         * {@linkplain #withClientCredentials(java.lang.String) OAuth Authentication}
          *
          * @return
          */
@@ -228,27 +225,7 @@ public interface YelpAPI
             this.http = http;
             return this;
         }
-        
-        /**
-         * If you prefer to obtain an OAuth Token yourself, you can provide it using this method.
-         * <p>
-         * Note that unlike {@link #withClientCredentials(java.lang.String, java.lang.String) }, this token
-         * will not be reloaded when it expires.
-         * 
-         * @param oauthToken
-         * @return
-         * @throws IllegalArgumentException 
-         */
-        public Builder withOAuthToken(@NonEmpty String oauthToken) throws IllegalArgumentException
-        {
-            checkThat(oauthToken)
-                .is(nonEmptyString())
-                .is(stringWithLengthGreaterThanOrEqualTo(2));
-            
-            this.oauthProvider = OAuthTokenProvider.newBasicTokenProvider(oauthToken);
-            return this;
-        }
-        
+
         /**
          * Uses the provided Client ID and Client Secret to obtain an OAuth token from Yelp.
          * Note that these are also known as {@code 'App ID'} and {@code 'App Secret'}.
@@ -256,31 +233,19 @@ public interface YelpAPI
          * See <a href="https://www.yelp.com/developers/documentation/v3/get_started">Yelp Documentation</a> for more
          * information.
          * 
-         * @param cliendId Client ID, also known as 'App ID'.
-         * @param clientSecret Client Secret, also known as 'App Secret'.
+         * @param apiKey Client ID, also known as 'App ID'.
          * @return
          * @throws IllegalArgumentException 
          * @see <a href="https://www.yelp.com/developers/documentation/v3/get_started">https://www.yelp.com/developers/documentation/v3/get_started</a>
          */
-        public Builder withClientCredentials(@NonEmpty String cliendId, @NonEmpty String clientSecret) throws IllegalArgumentException
+        public Builder withClientCredentials(@NonEmpty String apiKey) throws IllegalArgumentException
         {
-            checkThat(cliendId, clientSecret)
-                .usingMessage("invalid client id and secret")
+            checkThat(apiKey)
+                .usingMessage("invalid Api Key")
                 .are(nonEmptyString())
                 .are(stringWithLengthGreaterThanOrEqualTo(3));
             
-            this.oauthProvider = OAuthTokenProvider.newRefreshingTokenProvider(cliendId, clientSecret);
-            return this;
-        }
-        
-        /**
-         * When used with {@link #withClientCredentials(java.lang.String, java.lang.String) }, ensures that
-         * an OAuth token is obtained eagerly, before the {@link YelpAPI} is created.
-         * @return 
-         */
-        public Builder withEagerAuthentication()
-        {
-            requestTokenImmediately = true;
+            this.apiKey = apiKey;
             return this;
         }
 
@@ -288,7 +253,7 @@ public interface YelpAPI
          * Builds a usable {@link YelpAPI}.
          * <p>
          * Note that the client credentials must be set using either 
-         * {@link #withClientCredentials(java.lang.String, java.lang.String) } or {@link #withOAuthToken(java.lang.String) }.
+         * {@link #withClientCredentials(java.lang.String) }.
          *
          * @return
          * @throws IllegalStateException If the Yelp API is not ready to build.
@@ -296,14 +261,8 @@ public interface YelpAPI
         public YelpAPI build() throws IllegalStateException
         {
             ensureReadyToBuild();
-            
-            if (requestTokenImmediately)
-            {
-                LOG.debug("Obtaining OAuth Token in advance.");
-                oauthProvider.getToken();
-            }
-            
-            return new YelpAPIImpl(http, oauthProvider, baseURL);
+
+            return new YelpAPIImpl(http, apiKey, baseURL);
         }
 
         private void ensureReadyToBuild()
@@ -313,14 +272,19 @@ public interface YelpAPI
                 .is(nonEmptyString())
                 .is(validURL());
             
-            checkThat(oauthProvider)
-                .usingMessage("OAuth Provider missing")
+            checkThat(apiKey)
+                .usingMessage("invalid Api Key")
                 .is(notNull());
             
             checkThat(http)
                 .usingMessage("missing Alchemy HTTP client")
                 .is(notNull());
         }
-        
+
+        public String getApiKey() {
+            return apiKey;
+        }
+
+
     }
 }

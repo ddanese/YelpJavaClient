@@ -37,12 +37,8 @@ public class YelpSearchRequestBuilderTest
     private YelpSearchRequest.Builder instance;
     
     @GenerateString
-    private String cliendId;
-    
-    @GenerateString
-    private String cliendSecret;
-    
-    
+    private String apiKey;
+
     @Before
     public void setUp()
     {

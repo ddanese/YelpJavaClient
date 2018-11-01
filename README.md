@@ -4,10 +4,11 @@ YelpJavaClient
 [<img src="http://brand.redroma.tech/Logos/RedRoma-Logo%402x.png" width="300">](http://RedRoma.tech)
 
 [![Jenkins](http://jenkins.redroma.tech/job/YelpAPI/badge/icon)](http://jenkins.redroma.tech/job/YelpAPI/) [![Travis](https://travis-ci.org/RedRoma/YelpJavaClient.svg?branch=develop)](https://travis-ci.org/RedRoma/YelpJavaClient)
+![Maven Central Version](http://img.shields.io/maven-central/v/tech.redroma.yelp/yelp-api.svg)
 
 ---
 
-The **YelpJavaClient** provides
+The **YelpJavaClient** provides a simple Java interface for interacting with Yelp's API.
 
 ## Download
 
@@ -119,7 +120,7 @@ Nearly everything is unit tested, and it is already being used in production by 
 We wanted you to have fun, and to feel powerful.   
 We ditched the no-fun java `get() set()` pojo style in favor of open `public`
  variables. We trust you.
- 
+
 # License
 
 This Software is licensed under the Apache 2.0 License
