@@ -43,8 +43,7 @@ public class YelpAPIIT
 
     //Set to your own credentials to enable the test
     //BE SURE NOT TO CHECK THIS INTO A SOURCE REPOSITORY.
-    private final String clientId = "";
-    private final String clientSecret = "";
+    private final String apiKey = "EOqwbHuO1Sia_S6ojsW7AuNqs0gqSEaKRqfY6Yqwkr_YDnw-JjmyA70BTb4T7naPxlYoRx2E8Kb7PXIRUIWu_kjCTefmjCsuOe_u1QwCVbowGwUWoVsp1qZuZTbaW3Yx";
 
     private YelpSearchRequest request;
 
@@ -53,9 +52,9 @@ public class YelpAPIIT
     @Before
     public void setUp() throws Exception
     {
-        if (!isNullOrEmpty(clientId) && !isNullOrEmpty(clientSecret))
+        if (!isNullOrEmpty(apiKey))
         {
-            yelp = YelpAPI.newInstance(clientId, clientSecret);
+            yelp = YelpAPI.newInstance(apiKey);
         }
     }
 

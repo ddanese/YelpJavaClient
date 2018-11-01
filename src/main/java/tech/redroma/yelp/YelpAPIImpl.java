@@ -26,7 +26,6 @@ import tech.redroma.yelp.exceptions.YelpAuthenticationException;
 import tech.redroma.yelp.exceptions.YelpBadArgumentException;
 import tech.redroma.yelp.exceptions.YelpException;
 import tech.redroma.yelp.exceptions.YelpOperationFailedException;
-import tech.redroma.yelp.oauth.OAuthTokenProvider;
 import tech.sirwellington.alchemy.annotations.access.Internal;
 import tech.sirwellington.alchemy.annotations.access.NonInstantiable;
 import tech.sirwellington.alchemy.http.AlchemyHttp;
@@ -52,12 +51,12 @@ final class YelpAPIImpl implements YelpAPI
     private final static Logger LOG = LoggerFactory.getLogger(YelpAPIImpl.class);
     
     private final AlchemyHttp http;
-    private final OAuthTokenProvider tokenProvider;
     private final String baseURL;
+    private String apiKey;
     
-    YelpAPIImpl(AlchemyHttp http, OAuthTokenProvider tokenProvider, String baseURL)
+    YelpAPIImpl(AlchemyHttp http, String apiKey, String baseURL)
     {
-        checkThat(http, tokenProvider)
+        checkThat(http, apiKey)
             .are(notNull());
 
         checkThat(baseURL)
@@ -65,7 +64,7 @@ final class YelpAPIImpl implements YelpAPI
             .is(validURL());
 
         this.http = http;
-        this.tokenProvider = tokenProvider;
+        this.apiKey = apiKey;
         this.baseURL = baseURL;
     }
 
@@ -88,9 +87,7 @@ final class YelpAPIImpl implements YelpAPI
     @Override
     public List<YelpBusiness> searchForBusinesses(YelpSearchRequest request) throws YelpException
     {
-        String token = tokenProvider.getToken();
-        checkToken(token);
-        AlchemyRequest.Step3 httpRequest = createHTTPRequestToSearch(token, request);
+        AlchemyRequest.Step3 httpRequest = createHTTPRequestToSearch(this.apiKey, request);
         
         String url = baseURL + URLS.BUSINESS_SEARCH;
         
@@ -135,12 +132,11 @@ final class YelpAPIImpl implements YelpAPI
     @Override
     public List<YelpReview> getReviewsForBusiness(String businessId) throws YelpException
     {
-        String token = tokenProvider.getToken();
-        checkToken(token);
+        checkToken(this.apiKey);
         
         String url = createUrlToGetReviewsFor(businessId);
         
-        YelpResponses.ReviewsResponse response = tryToGetReviewsAt(url, token);
+        YelpResponses.ReviewsResponse response = tryToGetReviewsAt(url, this.apiKey);
         
         if (Objects.nonNull(response))
         {
@@ -151,11 +147,11 @@ final class YelpAPIImpl implements YelpAPI
         return Lists.emptyList();
     }
     
-    private void checkToken(String token) throws YelpAuthenticationException
+    private void checkToken(String apiKey) throws YelpAuthenticationException
     {
-        checkThat(token)
+        checkThat(apiKey)
             .throwing(YelpAuthenticationException.class)
-            .usingMessage("No token available to make API call")
+            .usingMessage("No apiKey available to make API call")
             .is(nonEmptyString());
     }
     
@@ -183,19 +179,17 @@ final class YelpAPIImpl implements YelpAPI
     {
         checkThat(url)
             .is(validURL());
-        
-        String token = tokenProvider.getToken();
-        
-        checkThat(token)
+
+        checkThat(this.apiKey)
             .throwing(YelpAuthenticationException.class)
-            .usingMessage("missing token")
+            .usingMessage("missing Api Key")
             .is(nonEmptyString());
         
         try
         {
             return http.go()
                 .get()
-                .usingHeader(HeaderParameters.AUTHORIZATION, HeaderParameters.BEARER + " " + token)
+                .usingHeader(HeaderParameters.AUTHORIZATION, HeaderParameters.BEARER + " " + apiKey)
                 .expecting(YelpBusinessDetails.class)
                 .at(url);
         }
@@ -228,17 +222,17 @@ final class YelpAPIImpl implements YelpAPI
         }
     }
 
-    private YelpResponses.ReviewsResponse tryToGetReviewsAt(String url, String token) throws YelpException
+    private YelpResponses.ReviewsResponse tryToGetReviewsAt(String url, String apiKey) throws YelpException
     {
         checkThat(url).is(validURL());
-        checkThat(token).is(nonEmptyString());
+        checkThat(apiKey).is(nonEmptyString());
 
         try
         {
             return http
                 .go()
                 .get()
-                .usingHeader(HeaderParameters.AUTHORIZATION, HeaderParameters.BEARER + " " + token)
+                .usingHeader(HeaderParameters.AUTHORIZATION, HeaderParameters.BEARER + " " + apiKey)
                 .expecting(YelpResponses.ReviewsResponse.class)
                 .at(url);
         }
@@ -252,7 +246,7 @@ final class YelpAPIImpl implements YelpAPI
             }
             else if (isBadAuth(ex))
             {
-                throw new YelpAuthenticationException("Invalid token", ex);
+                throw new YelpAuthenticationException("Invalid apiKey", ex);
             }
             else
             {
@@ -372,7 +366,7 @@ final class YelpAPIImpl implements YelpAPI
     {
         int hash = 5;
         hash = 29 * hash + Objects.hashCode(this.http);
-        hash = 29 * hash + Objects.hashCode(this.tokenProvider);
+        hash = 29 * hash + Objects.hashCode(this.apiKey);
         hash = 29 * hash + Objects.hashCode(this.baseURL);
         return hash;
     }
@@ -401,7 +395,7 @@ final class YelpAPIImpl implements YelpAPI
         {
             return false;
         }
-        if (!Objects.equals(this.tokenProvider, other.tokenProvider))
+        if (!Objects.equals(this.apiKey, other.apiKey))
         {
             return false;
         }
@@ -411,7 +405,7 @@ final class YelpAPIImpl implements YelpAPI
     @Override
     public String toString()
     {
-        return "YelpAPIImpl{" + "http=" + http + ", tokenProvider=" + tokenProvider + ", baseURL=" + baseURL + '}';
+        return "YelpAPIImpl{" + "http=" + http + ", apiKey=<redacted>, baseURL=" + baseURL + '}';
     }
 
     /**

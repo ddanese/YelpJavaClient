@@ -27,7 +27,6 @@ import tech.redroma.yelp.exceptions.YelpAuthenticationException;
 import tech.redroma.yelp.exceptions.YelpBadArgumentException;
 import tech.redroma.yelp.exceptions.YelpException;
 import tech.redroma.yelp.exceptions.YelpOperationFailedException;
-import tech.redroma.yelp.oauth.OAuthTokenProvider;
 import tech.sirwellington.alchemy.http.AlchemyHttp;
 import tech.sirwellington.alchemy.http.HttpResponse;
 import tech.sirwellington.alchemy.http.exceptions.AlchemyHttpException;
@@ -62,15 +61,12 @@ public class YelpAPIImplTest
     
     @Mock
     private AlchemyHttp http;
-    
-    @Mock
-    private OAuthTokenProvider tokenProvider;
-    
+
     @GenerateURL
     private URL baseURL;
     
     @GenerateString
-    private String token;
+    private String apiKey;
     
     @Mock
     private HttpResponse httpResponse;
@@ -112,7 +108,7 @@ public class YelpAPIImplTest
         setupData();
         setupMocks();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
     }
     
     private void setupData() throws Exception
@@ -136,8 +132,7 @@ public class YelpAPIImplTest
     
     private void setupMocks() throws Exception
     {
-        when(tokenProvider.getToken()).thenReturn(token);
-        
+
     }
     
     @Test
@@ -150,7 +145,7 @@ public class YelpAPIImplTest
             .thenReturnPOJO(businessDetails)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         YelpBusinessDetails result = instance.getBusinessDetails(businessID);
         assertThat(result, is(businessDetails));
@@ -169,7 +164,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.getBusinessDetails(businessID))
             .isInstanceOf(YelpException.class);
@@ -188,7 +183,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.getBusinessDetails(businessID))
             .isInstanceOf(YelpAuthenticationException.class);
@@ -204,7 +199,7 @@ public class YelpAPIImplTest
             .thenReturnPOJO(searchResponse)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         List<YelpBusiness> results = instance.searchForBusinesses(request);
         assertThat(results, is(businesses));
@@ -224,7 +219,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.searchForBusinesses(request))
             .isInstanceOf(YelpException.class);
@@ -243,7 +238,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.searchForBusinesses(request))
             .isInstanceOf(YelpAuthenticationException.class);
@@ -260,7 +255,7 @@ public class YelpAPIImplTest
             .thenReturnPOJO(reviewsResponse)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         List<YelpReview> results = instance.getReviewsForBusiness(businessID);
         
@@ -280,7 +275,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.getReviewsForBusiness(businessID))
             .isInstanceOf(YelpBadArgumentException.class);
@@ -297,7 +292,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.getReviewsForBusiness(businessID))
             .isInstanceOf(YelpOperationFailedException.class);
@@ -315,7 +310,7 @@ public class YelpAPIImplTest
             .thenThrow(ex)
             .build();
         
-        instance = new YelpAPIImpl(http, tokenProvider, baseURL.toString());
+        instance = new YelpAPIImpl(http, apiKey, baseURL.toString());
         
         assertThrows(() -> instance.getReviewsForBusiness(businessID))
             .isInstanceOf(YelpAuthenticationException.class);

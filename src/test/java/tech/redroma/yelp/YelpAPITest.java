@@ -38,12 +38,8 @@ import static tech.sirwellington.alchemy.test.junit.ThrowableAssertion.assertThr
 public class YelpAPITest 
 {
     @GenerateString
-    private String cliendId;
-    
-    @GenerateString
-    private String cliendSecret;
-    
-    
+    private String apiKey;
+
     @Before
     public void setUp() throws Exception
     {
@@ -67,7 +63,7 @@ public class YelpAPITest
     @Test
     public void testNewInstance()
     {
-        YelpAPI result = YelpAPI.newInstance(cliendId, cliendSecret);
+        YelpAPI result = YelpAPI.newInstance(apiKey);
         assertThat(result, notNullValue());
     }
     
@@ -75,8 +71,7 @@ public class YelpAPITest
     @Test
     public void testNewInstanceWithBadArgs()
     {
-        assertThrows(() -> YelpAPI.newInstance("", cliendSecret)).isInstanceOf(IllegalArgumentException.class);
-        assertThrows(() -> YelpAPI.newInstance(cliendId, "")).isInstanceOf(IllegalArgumentException.class);
+        assertThrows(() -> YelpAPI.newInstance("")).isInstanceOf(IllegalArgumentException.class);
     }
 
 }
